@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capturar Foto - RepairTrackQR</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #050507; color: #eeeef2; font-family: 'Inter', -apple-system, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+    .header { padding: 14px 20px; background: rgba(12,12,18,0.9); border-bottom: 1px solid #1e1e2e; display: flex; justify-content: space-between; align-items: center; }
+    .header h2 { font-size: 16px; font-weight: 700; }
+    .btn { padding: 8px 16px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+    .btn-back { background: #16161f; border: 1px solid #1e1e2e; color: #8888a0; }
+    .main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .card { width: 100%; max-width: 600px; }
+    .camera-box { border-radius: 20px; overflow: hidden; background: #000; position: relative; aspect-ratio: 4/3; margin-bottom: 20px; border: 3px solid #6366f1; box-shadow: 0 0 30px rgba(99,102,241,0.15); }
+    .camera-box.captured { border-color: #10b981; box-shadow: 0 0 30px rgba(16,185,129,0.15); }
+    video, .captured-img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .scan-line { position: absolute; left: 8%; right: 8%; height: 2px; background: linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent); box-shadow: 0 0 10px rgba(99,102,241,0.4); animation: scanLine 2.5s ease-in-out infinite; top: 10%; }
+    @keyframes scanLine { 0% { top: 10%; } 100% { top: 85%; } }
+    .corner { position: absolute; width: 32px; height: 32px; border-radius: 6px; }
+    .corner.tl { top: 8%; left: 8%; border-top: 3px solid rgba(255,255,255,0.3); border-left: 3px solid rgba(255,255,255,0.3); }
+    .corner.tr { top: 8%; right: 8%; border-top: 3px solid rgba(255,255,255,0.3); border-right: 3px solid rgba(255,255,255,0.3); }
+    .corner.bl { bottom: 8%; left: 8%; border-bottom: 3px solid rgba(255,255,255,0.3); border-left: 3px solid rgba(255,255,255,0.3); }
+    .corner.br { bottom: 8%; right: 8%; border-bottom: 3px solid rgba(255,255,255,0.3); border-right: 3px solid rgba(255,255,255,0.3); }
+    .badge { position: absolute; top: 16px; right: 16px; padding: 8px 16px; background: rgba(16,185,129,0.9); border-radius: 10px; color: #fff; font-size: 13px; font-weight: 700; }
+    .loading { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: #000; text-align: center; color: #8888a0; }
+    .loading span { font-size: 40px; display: block; margin-bottom: 12px; }
+    .hint { text-align: center; color: #555568; font-size: 13px; margin-bottom: 16px; }
+    .actions { display: flex; gap: 12px; }
+    .btn-cancel { flex: 1; padding: 16px; background: #16161f; border: 1px solid #1e1e2e; border-radius: 14px; color: #8888a0; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-capture { flex: 2; padding: 16px; background: linear-gradient(135deg, #6366f1, #7c3aed); border: none; border-radius: 14px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 20px rgba(99,102,241,0.35); display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .btn-capture:disabled { background: #16161f; color: #555568; box-shadow: none; }
+    .btn-retake { flex: 1; padding: 16px; background: #16161f; border: 1px solid #1e1e2e; border-radius: 14px; color: #8888a0; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .btn-confirm { flex: 2; padding: 16px; background: linear-gradient(135deg, #10b981, #059669); border: none; border-radius: 14px; color: #fff; font-size: 16px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 20px rgba(16,185,129,0.35); }
+    .btn-confirm:disabled { background: #16161f; color: #555568; box-shadow: none; }
+    .circle { width: 26px; height: 26px; border-radius: 50%; border: 3px solid currentColor; display: inline-block; }
+    .error-box { padding: 48px; text-align: center; background: #111118; border-radius: 20px; border: 1px solid rgba(239,68,68,0.15); }
+    .error-box p { color: #ef4444; font-size: 16px; font-weight: 700; margin: 16px 0 8px; }
+    .error-box small { color: #555568; font-size: 13px; }
+    canvas { display: none; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="btn btn-back" onclick="goBack()">← Volver</button>
+      <h2>📸 Capturar Foto del Equipo</h2>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="card">
+      <div id="error-container" style="display:none;"></div>
+
+      <div id="camera-container">
+        <div id="camera-box" class="camera-box">
+          <video id="video" autoplay playsinline muted></video>
+          <div id="overlays" style="display:none;">
+            <div class="scan-line"></div>
+            <div class="corner tl"></div>
+            <div class="corner tr"></div>
+            <div class="corner bl"></div>
+            <div class="corner br"></div>
+          </div>
+          <div id="loading" class="loading">
+            <div><span>📷</span><p>Iniciando cámara...</p></div>
+          </div>
+          <img id="captured-img" class="captured-img" style="display:none;" />
+          <div id="badge" class="badge" style="display:none;">✓ Foto capturada</div>
+        </div>
+
+        <p id="hint" class="hint" style="display:none;">Centra el equipo en el recuadro y presiona el botón para capturar</p>
+
+        <div id="actions-capture" class="actions">
+          <button class="btn-cancel" onclick="goBack()">Cancelar</button>
+          <button id="btn-take" class="btn-capture" disabled onclick="takePhoto()">
+            <span class="circle"></span> Cargando...
+          </button>
+        </div>
+
+        <div id="actions-confirm" class="actions" style="display:none;">
+          <button class="btn-retake" onclick="retake()">🔄 Repetir</button>
+          <button id="btn-use" class="btn-confirm" onclick="confirmPhoto()">✓ Usar esta foto</button>
+        </div>
+      </div>
+
+      <canvas id="canvas"></canvas>
+    </div>
+  </div>
+
+  <script>
+    let stream = null;
+    let capturedDataUrl = null;
+
+    // Leer la URL de retorno (puede ser /new-order o /dashboard)
+    function getReturnUrl() {
+      var url = sessionStorage.getItem('cameraReturnUrl');
+      sessionStorage.removeItem('cameraReturnUrl');
+      return url || '/dashboard';
+    }
+
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const capturedImg = document.getElementById('captured-img');
+    const loading = document.getElementById('loading');
+    const overlays = document.getElementById('overlays');
+    const hint = document.getElementById('hint');
+    const badge = document.getElementById('badge');
+    const btnTake = document.getElementById('btn-take');
+    const actionsCapture = document.getElementById('actions-capture');
+    const actionsConfirm = document.getElementById('actions-confirm');
+    const cameraBox = document.getElementById('camera-box');
+    const errorContainer = document.getElementById('error-container');
+    const cameraContainer = document.getElementById('camera-container');
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'environment', width: { ideal: 1920 }, height: { ideal: 1080 } }
+        });
+        video.srcObject = stream;
+        video.onloadedmetadata = function() {
+          loading.style.display = 'none';
+          overlays.style.display = 'block';
+          hint.style.display = 'block';
+          btnTake.disabled = false;
+          btnTake.innerHTML = '<span class="circle"></span> Capturar Foto';
+        };
+      } catch (err) {
+        var msg = 'Error al acceder a la cámara.';
+        if (err.name === 'NotAllowedError') msg = 'Permiso de cámara denegado. Permite el acceso en tu navegador.';
+        else if (err.name === 'NotFoundError') msg = 'No se encontró una cámara en este dispositivo.';
+        showError(msg);
+      }
+    }
+
+    function showError(msg) {
+      cameraContainer.style.display = 'none';
+      errorContainer.style.display = 'block';
+      errorContainer.innerHTML = '<div class="error-box"><div style="font-size:48px">📷</div><p>' + msg + '</p><small>Vuelve y usa "Subir foto" en su lugar.</small><br><br><button class="btn-capture" style="display:inline-flex" onclick="goBack()">Volver</button></div>';
+    }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(function(t) { t.stop(); });
+        stream = null;
+      }
+      video.srcObject = null;
+    }
+
+    function takePhoto() {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0);
+      capturedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+      stopCamera();
+      video.style.display = 'none';
+      overlays.style.display = 'none';
+      capturedImg.src = capturedDataUrl;
+      capturedImg.style.display = 'block';
+      badge.style.display = 'block';
+      hint.style.display = 'none';
+      cameraBox.classList.add('captured');
+
+      actionsCapture.style.display = 'none';
+      actionsConfirm.style.display = 'flex';
+    }
+
+    function retake() {
+      capturedDataUrl = null;
+      video.style.display = 'block';
+      capturedImg.style.display = 'none';
+      badge.style.display = 'none';
+      cameraBox.classList.remove('captured');
+      loading.style.display = 'flex';
+      btnTake.disabled = true;
+      btnTake.innerHTML = '<span class="circle"></span> Cargando...';
+
+      actionsCapture.style.display = 'flex';
+      actionsConfirm.style.display = 'none';
+
+      startCamera();
+    }
+
+    async function confirmPhoto() {
+      if (!capturedDataUrl) return;
+      var btnUse = document.getElementById('btn-use');
+      btnUse.disabled = true;
+      btnUse.textContent = 'Subiendo foto...';
+
+      try {
+        var res = await fetch(capturedDataUrl);
+        var blob = await res.blob();
+        var file = new File([blob], 'camera-' + Date.now() + '.jpg', { type: 'image/jpeg' });
+        var formData = new FormData();
+        formData.append('file', file);
+
+        var uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+        if (uploadRes.ok) {
+          var data = await uploadRes.json();
+          sessionStorage.setItem('capturedImage', JSON.stringify({ url: data.url, preview: capturedDataUrl }));
+          // Redirigir a la página que nos llamó
+          var returnUrl = getReturnUrl();
+          window.location.href = returnUrl;
+        } else {
+          alert('Error al subir la foto. Intenta de nuevo.');
+          btnUse.disabled = false;
+          btnUse.textContent = '✓ Usar esta foto';
+        }
+      } catch (e) {
+        alert('Error al subir la foto. Intenta de nuevo.');
+        btnUse.disabled = false;
+        btnUse.textContent = '✓ Usar esta foto';
+      }
+    }
+
+    function goBack() {
+      stopCamera();
+      // Volver a la página que nos llamó
+      var returnUrl = getReturnUrl();
+      window.location.href = returnUrl;
+    }
+
+    startCamera();
+  </script>
+</body>
+</html>

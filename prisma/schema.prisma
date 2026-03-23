@@ -1,0 +1,93 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("client")
+  phone     String?
+  createdAt DateTime @default(now())
+
+  repairs       Repair[]
+  messages      Message[]
+  notifications Notification[]
+}
+
+model Repair {
+  id            String   @id @default(uuid())
+  code          String   @unique
+  device        String
+  brand         String?
+  model         String?
+  issue         String
+  status        String   @default("pending")
+  priority      String   @default("media")
+  estimatedCost Float    @default(0)
+  notes         String?
+  image         String?
+  accessories   String?
+  clientName    String?
+  clientPhone   String?
+  clientEmail   String?
+  qrCode        String   @unique
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  userId   String
+  user     User      @relation(fields: [userId], references: [id])
+  messages Message[]
+}
+
+model Message {
+  id        String   @id @default(uuid())
+  text      String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  repairId String
+  repair   Repair @relation(fields: [repairId], references: [id])
+  userId   String
+  user     User   @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  type      String
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+}
+
+model Service {
+  id        String   @id @default(cuid())
+  name      String
+  price     Float
+  icon      String   @default("🔧")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model InventoryItem {
+  id        String   @id @default(cuid())
+  name      String
+  category  String?
+  quantity  Int      @default(0)
+  price     Float    @default(0)
+  minStock  Int      @default(5)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
