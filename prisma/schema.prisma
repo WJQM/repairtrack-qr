@@ -8,45 +8,43 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  password  String
-  role      String   @default("client")
-  phone     String?
-  createdAt DateTime @default(now())
-
-  repairs         Repair[]       @relation("CreatedRepairs")
-  assignedRepairs Repair[]       @relation("AssignedRepairs")
+  id              String         @id @default(uuid())
+  name            String
+  email           String         @unique
+  password        String
+  role            String         @default("client")
+  phone           String?
+  createdAt       DateTime       @default(now())
   messages        Message[]
   notifications   Notification[]
+  assignedRepairs Repair[]       @relation("AssignedRepairs")
+  repairs         Repair[]       @relation("CreatedRepairs")
 }
 
 model Repair {
-  id            String   @id @default(uuid())
-  code          String   @unique
+  id            String    @id @default(uuid())
+  code          String    @unique
   device        String
-  brand         String?
-  model         String?
   issue         String
-  status        String   @default("pending")
-  priority      String   @default("media")
-  estimatedCost Float    @default(0)
+  status        String    @default("pending")
+  priority      String    @default("media")
+  estimatedCost Float     @default(0)
   notes         String?
+  qrCode        String    @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  userId        String
   image         String?
-  accessories   String?
+  brand         String?
+  clientEmail   String?
   clientName    String?
   clientPhone   String?
-  clientEmail   String?
-  qrCode        String   @unique
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  userId       String
-  user         User      @relation("CreatedRepairs", fields: [userId], references: [id])
-  technicianId String?
-  technician   User?     @relation("AssignedRepairs", fields: [technicianId], references: [id])
-  messages     Message[]
+  model         String?
+  accessories   String?
+  technicianId  String?
+  messages      Message[]
+  technician    User?     @relation("AssignedRepairs", fields: [technicianId], references: [id])
+  user          User      @relation("CreatedRepairs", fields: [userId], references: [id])
 }
 
 model Message {
@@ -54,11 +52,10 @@ model Message {
   text      String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  repairId String
-  repair   Repair @relation(fields: [repairId], references: [id])
-  userId   String
-  user     User   @relation(fields: [userId], references: [id])
+  repairId  String
+  userId    String
+  repair    Repair   @relation(fields: [repairId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Notification {
@@ -68,9 +65,8 @@ model Notification {
   message   String
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Service {
@@ -90,21 +86,21 @@ model InventoryItem {
   quantity  Int      @default(0)
   price     Float    @default(0)
   minStock  Int      @default(5)
-  image     String?
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  image     String?
 }
 
 model Software {
   id              String   @id @default(cuid())
   name            String
   category        String?
-  minRequirements String?
-  recRequirements String?
-  size            String?
   image           String?
   active          Boolean  @default(true)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  minRequirements String?
+  recRequirements String?
+  size            String?
 }
