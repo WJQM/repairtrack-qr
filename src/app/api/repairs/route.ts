@@ -36,7 +36,18 @@ async function generateCode(): Promise<string> {
 export async function GET(request: Request) {
   const user = getUserFromToken(request);
   if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
-  const repairs = await prisma.repair.findMany({ orderBy: { createdAt: "desc" } });
+
+  // Técnicos solo ven sus reparaciones asignadas
+  const where = user.role === "tech" ? { technicianId: user.id } : {};
+
+  const repairs = await prisma.repair.findMany({
+    where,
+    include: {
+      technician: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
   return NextResponse.json(repairs);
 }
 
@@ -65,9 +76,11 @@ export async function POST(request: Request) {
         clientEmail: body.clientEmail || null,
         qrCode: code,
         userId: user.id,
+        technicianId: body.technicianId || null,
       },
     });
 
+    // Notificar al admin
     await prisma.notification.create({
       data: {
         type: "new_repair",
@@ -76,6 +89,18 @@ export async function POST(request: Request) {
         userId: user.id,
       },
     });
+
+    // Notificar al técnico asignado
+    if (body.technicianId) {
+      await prisma.notification.create({
+        data: {
+          type: "new_repair",
+          title: "Nueva asignación",
+          message: `Se te asignó ${repair.code} - ${repair.device} (${body.clientName || "Sin nombre"})`,
+          userId: body.technicianId,
+        },
+      });
+    }
 
     return NextResponse.json(repair);
   } catch (error) {

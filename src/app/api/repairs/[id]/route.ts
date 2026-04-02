@@ -35,6 +35,35 @@ export async function PATCH(
     const { id } = await context.params;
     const body = await request.json();
 
+    // Si es técnico, verificar que la reparación le fue asignada
+    if (user.role === "tech") {
+      const repair = await prisma.repair.findUnique({ where: { id } });
+      if (!repair || repair.technicianId !== user.id) {
+        return NextResponse.json({ error: "No tienes permiso para modificar esta orden" }, { status: 403 });
+      }
+      // Técnicos solo pueden cambiar el estado
+      const updateData: Record<string, any> = {};
+      if (body.status !== undefined) updateData.status = body.status;
+      if (body.notes !== undefined) updateData.notes = body.notes || null;
+
+      const updated = await prisma.repair.update({ where: { id }, data: updateData });
+
+      if (body.status) {
+        // Notificar al admin que creó la orden
+        await prisma.notification.create({
+          data: {
+            type: "status_change",
+            title: "Estado actualizado por técnico",
+            message: `${updated.code} (${updated.device}) cambió a "${STATUS_LABELS[body.status] || body.status}"`,
+            userId: updated.userId,
+          },
+        });
+      }
+
+      return NextResponse.json(updated);
+    }
+
+    // Admin puede cambiar todo
     const updateData: Record<string, any> = {};
 
     if (body.status !== undefined) updateData.status = body.status;
@@ -50,6 +79,7 @@ export async function PATCH(
     if (body.clientEmail !== undefined) updateData.clientEmail = body.clientEmail || null;
     if (body.image !== undefined) updateData.image = body.image || null;
     if (body.accessories !== undefined) updateData.accessories = body.accessories || null;
+    if (body.technicianId !== undefined) updateData.technicianId = body.technicianId || null;
 
     const repair = await prisma.repair.update({
       where: { id },
@@ -76,6 +106,18 @@ export async function PATCH(
       });
     }
 
+    // Si se reasignó a un técnico, notificarle
+    if (body.technicianId && body.technicianId !== repair.technicianId) {
+      await prisma.notification.create({
+        data: {
+          type: "new_repair",
+          title: "Nueva asignación",
+          message: `Se te asignó ${repair.code} - ${repair.device}`,
+          userId: body.technicianId,
+        },
+      });
+    }
+
     return NextResponse.json(repair);
   } catch (error) {
     console.error("PATCH error:", error);
@@ -89,6 +131,11 @@ export async function DELETE(
 ) {
   const user = getUserFromToken(request);
   if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+  // Solo admin puede eliminar
+  if (user.role === "tech") {
+    return NextResponse.json({ error: "Solo el administrador puede eliminar órdenes" }, { status: 403 });
+  }
 
   try {
     const { id } = await context.params;

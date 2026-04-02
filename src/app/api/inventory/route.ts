@@ -12,7 +12,7 @@ function verifyToken(req: Request) {
 
 export async function GET() {
   try {
-    const items = await prisma.inventoryItem.findMany({ where: { active: true }, orderBy: { createdAt: "asc" } });
+    const items = await prisma.inventoryItem.findMany({ where: { active: true }, orderBy: { createdAt: "desc" } });
     return NextResponse.json(items);
   } catch { return NextResponse.json([], { status: 500 }); }
 }
@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   const user = verifyToken(req);
   if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   try {
-    const { name, category, quantity, price, minStock } = await req.json();
+    const { name, category, quantity, price, minStock, image } = await req.json();
     if (!name) return NextResponse.json({ error: "Nombre requerido" }, { status: 400 });
     const item = await prisma.inventoryItem.create({
       data: {
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
         quantity: parseInt(quantity) || 0,
         price: parseFloat(price) || 0,
         minStock: parseInt(minStock) || 5,
+        image: image || null,
       },
     });
     return NextResponse.json(item, { status: 201 });
@@ -40,7 +41,7 @@ export async function PATCH(req: Request) {
   const user = verifyToken(req);
   if (!user) return NextResponse.json({ error: "No autorizado" }, { status: 401 });
   try {
-    const { id, name, category, quantity, price, minStock, active } = await req.json();
+    const { id, name, category, quantity, price, minStock, image, active } = await req.json();
     if (!id) return NextResponse.json({ error: "ID requerido" }, { status: 400 });
     const item = await prisma.inventoryItem.update({
       where: { id },
@@ -50,6 +51,7 @@ export async function PATCH(req: Request) {
         ...(quantity !== undefined && { quantity: parseInt(quantity) }),
         ...(price !== undefined && { price: parseFloat(price) }),
         ...(minStock !== undefined && { minStock: parseInt(minStock) }),
+        ...(image !== undefined && { image }),
         ...(active !== undefined && { active }),
       },
     });

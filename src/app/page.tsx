@@ -8,7 +8,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState("client");
+  const [role, setRole] = useState("tech");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -26,7 +26,7 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Error en la solicitud"); setLoading(false); return; }
       if (isRegister) { setIsRegister(false); setError(""); alert("¡Cuenta creada! Ahora inicia sesión."); }
-      else { localStorage.setItem("token", data.token); localStorage.setItem("user", JSON.stringify(data.user)); router.push("/dashboard"); }
+      else { localStorage.setItem("token", data.token); localStorage.setItem("user", JSON.stringify(data.user)); router.push(data.user.role === "tech" ? "/asignaciones" : "/dashboard"); }
     } catch { setError("Error de conexión al servidor"); }
     setLoading(false);
   };
@@ -40,8 +40,6 @@ export default function LoginPage() {
         @keyframes fadeUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes float { 0%, 100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(2deg); } }
         @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }
-        @keyframes orbit1 { 0% { transform: rotate(0deg) translateX(300px) rotate(0deg); } 100% { transform: rotate(360deg) translateX(300px) rotate(-360deg); } }
-        @keyframes orbit2 { 0% { transform: rotate(0deg) translateX(200px) rotate(0deg); } 100% { transform: rotate(-360deg) translateX(200px) rotate(360deg); } }
         @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
         .login-input { width: 100%; padding: 14px 16px; background: rgba(22,22,31,0.8); border: 1px solid rgba(46,46,62,0.5); border-radius: 12px; color: #eeeef2; font-size: 14px; outline: none; transition: all 0.3s; backdrop-filter: blur(10px); }
         .login-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1), 0 0 20px rgba(99,102,241,0.05); }
@@ -50,24 +48,12 @@ export default function LoginPage() {
 
       {/* Animated Background */}
       <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
-        {/* Grid */}
-        <div style={{
-          position: "absolute", inset: 0, opacity: 0.03,
-          backgroundImage: "linear-gradient(rgba(99,102,241,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.5) 1px, transparent 1px)",
-          backgroundSize: "60px 60px",
-        }} />
-        {/* Gradient Orbs */}
+        <div style={{ position: "absolute", inset: 0, opacity: 0.03, backgroundImage: "linear-gradient(rgba(99,102,241,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.5) 1px, transparent 1px)", backgroundSize: "60px 60px" }} />
         <div style={{ position: "absolute", top: "20%", left: "50%", width: 500, height: 500, borderRadius: "50%", background: "radial-gradient(circle, rgba(99,102,241,0.08), transparent 70%)", animation: "pulse 6s ease-in-out infinite", transform: "translateX(-50%)" }} />
         <div style={{ position: "absolute", top: "60%", left: "20%", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(16,185,129,0.05), transparent 70%)", animation: "pulse 8s ease-in-out infinite 2s" }} />
         <div style={{ position: "absolute", top: "30%", right: "15%", width: 250, height: 250, borderRadius: "50%", background: "radial-gradient(circle, rgba(168,85,247,0.05), transparent 70%)", animation: "pulse 7s ease-in-out infinite 1s" }} />
-        {/* Floating particles */}
         {[...Array(6)].map((_, i) => (
-          <div key={i} style={{
-            position: "absolute", width: 4 + i * 2, height: 4 + i * 2, borderRadius: "50%",
-            background: i % 2 === 0 ? "rgba(99,102,241,0.3)" : "rgba(16,185,129,0.3)",
-            top: `${15 + i * 14}%`, left: `${10 + i * 15}%`,
-            animation: `float ${4 + i}s ease-in-out infinite ${i * 0.5}s`,
-          }} />
+          <div key={i} style={{ position: "absolute", width: 4 + i * 2, height: 4 + i * 2, borderRadius: "50%", background: i % 2 === 0 ? "rgba(99,102,241,0.3)" : "rgba(16,185,129,0.3)", top: `${15 + i * 14}%`, left: `${10 + i * 15}%`, animation: `float ${4 + i}s ease-in-out infinite ${i * 0.5}s` }} />
         ))}
       </div>
 
@@ -81,11 +67,7 @@ export default function LoginPage() {
         opacity: mounted ? 1 : 0, transform: mounted ? "translateY(0)" : "translateY(30px)",
         transition: "all 0.8s cubic-bezier(0.16, 1, 0.3, 1)",
       }}>
-        {/* Glow line top */}
-        <div style={{
-          position: "absolute", top: 0, left: "20%", right: "20%", height: 1,
-          background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent)",
-        }} />
+        <div style={{ position: "absolute", top: 0, left: "20%", right: "20%", height: 1, background: "linear-gradient(90deg, transparent, rgba(99,102,241,0.4), transparent)" }} />
 
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 40 }}>
@@ -98,10 +80,7 @@ export default function LoginPage() {
             position: "relative",
           }}>
             🔧
-            <div style={{
-              position: "absolute", inset: -2, borderRadius: 24, border: "1px solid rgba(99,102,241,0.2)",
-              animation: "pulse 3s ease-in-out infinite",
-            }} />
+            <div style={{ position: "absolute", inset: -2, borderRadius: 24, border: "1px solid rgba(99,102,241,0.2)", animation: "pulse 3s ease-in-out infinite" }} />
           </div>
           <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.5px" }}>
             Repair<span style={{ background: "linear-gradient(135deg, #6366f1, #a855f7)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Track</span>
@@ -113,9 +92,7 @@ export default function LoginPage() {
         </div>
 
         {/* Toggle */}
-        <div style={{
-          display: "flex", background: "rgba(5,5,7,0.6)", borderRadius: 14, padding: 4, marginBottom: 30, border: "1px solid var(--border)",
-        }}>
+        <div style={{ display: "flex", background: "rgba(5,5,7,0.6)", borderRadius: 14, padding: 4, marginBottom: 30, border: "1px solid var(--border)" }}>
           {["Iniciar Sesión", "Registrarse"].map((label, i) => {
             const active = i === 0 ? !isRegister : isRegister;
             return (
@@ -132,10 +109,7 @@ export default function LoginPage() {
 
         {/* Error */}
         {error && (
-          <div style={{
-            padding: "13px 16px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)",
-            borderRadius: 12, color: "#ef4444", fontSize: 13, marginBottom: 20, display: "flex", alignItems: "center", gap: 8,
-          }}>
+          <div style={{ padding: "13px 16px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.15)", borderRadius: 12, color: "#ef4444", fontSize: 13, marginBottom: 20, display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ fontSize: 16 }}>⚠️</span> {error}
           </div>
         )}
@@ -162,8 +136,8 @@ export default function LoginPage() {
               <label style={labelStyle}>Tipo de cuenta</label>
               <div style={{ display: "flex", gap: 10 }}>
                 {[
+                  { val: "admin", emoji: "🛡️", label: "Administrador", desc: "Control total del sistema" },
                   { val: "tech", emoji: "🔧", label: "Técnico", desc: "Gestiona reparaciones" },
-                  { val: "client", emoji: "👤", label: "Cliente", desc: "Sigue tus equipos" },
                 ].map((opt) => {
                   const active = role === opt.val;
                   return (
@@ -206,7 +180,7 @@ export default function LoginPage() {
           {!isRegister ? (
             <p style={{ fontSize: 13, color: "#555568" }}>
               ¿No tienes cuenta?{" "}
-              <span onClick={() => setIsRegister(true)} style={{ color: "#6366f1", cursor: "pointer", fontWeight: 600, transition: "color 0.2s" }}>Regístrate gratis</span>
+              <span onClick={() => setIsRegister(true)} style={{ color: "#6366f1", cursor: "pointer", fontWeight: 600, transition: "color 0.2s" }}>Regístrate</span>
             </p>
           ) : (
             <p style={{ fontSize: 13, color: "#555568" }}>
@@ -216,11 +190,7 @@ export default function LoginPage() {
           )}
         </div>
 
-        {/* Bottom glow */}
-        <div style={{
-          position: "absolute", bottom: -1, left: "30%", right: "30%", height: 1,
-          background: "linear-gradient(90deg, transparent, rgba(124,58,237,0.3), transparent)",
-        }} />
+        <div style={{ position: "absolute", bottom: -1, left: "30%", right: "30%", height: 1, background: "linear-gradient(90deg, transparent, rgba(124,58,237,0.3), transparent)" }} />
       </div>
     </div>
   );

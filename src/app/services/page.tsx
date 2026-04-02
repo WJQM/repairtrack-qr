@@ -11,6 +11,7 @@ export default function ServicesPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -26,7 +27,9 @@ export default function ServicesPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    if (!token) { router.push("/"); return; }
+    const userData = localStorage.getItem("user");
+    if (!token || !userData) { router.push("/"); return; }
+    setUser(JSON.parse(userData));
     loadServices();
   }, []);
 
@@ -61,34 +64,56 @@ export default function ServicesPage() {
 
   const totalRevenue = services.reduce((sum, s) => sum + s.price, 0);
 
+  if (!user) return null;
+  if (user.role !== "admin") { router.push("/dashboard"); return null; }
+
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-primary)" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", paddingLeft: 200 }}>
       {toast && <div style={{ position: "fixed", top: 24, right: 24, padding: "14px 24px", background: "linear-gradient(135deg, #10b981, #059669)", color: "#fff", borderRadius: 14, fontSize: 13, fontWeight: 600, boxShadow: "0 8px 30px rgba(16,185,129,0.3)", zIndex: 100, animation: "slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}>{toast}</div>}
       <style>{`
         @keyframes slideIn { from { opacity: 0; transform: translateX(80px) scale(0.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes fadeScale { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+        .sidebar-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 14px; border-radius: 10px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; background: transparent; color: var(--text-muted); transition: all 0.15s; text-align: left; }
+        .sidebar-btn:hover { background: rgba(99,102,241,0.06); color: var(--text-secondary); }
+        .sidebar-btn.active { background: rgba(99,102,241,0.12); color: #818cf8; }
+        .sidebar-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
       `}</style>
 
-      <header style={{ padding: "0 28px", height: 64, background: "rgba(12,12,18,0.8)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 40 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: "linear-gradient(135deg, #a855f7, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, boxShadow: "0 0 20px rgba(168,85,247,0.2)" }}>🛠️</div>
-          <span style={{ fontWeight: 800, fontSize: 16, letterSpacing: "-0.3px" }}>Repair<span style={{ color: "#6366f1" }}>Track</span><span style={{ color: "#818cf8", fontSize: 13 }}>QR</span></span>
+      {/* ═══ SIDEBAR ═══ */}
+      <aside style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 200, background: "rgba(12,12,18,0.95)", backdropFilter: "blur(20px)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", zIndex: 45, padding: "0 10px" }}>
+        <div style={{ padding: "18px 14px 20px", borderBottom: "1px solid var(--border)", marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #818cf8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, boxShadow: "0 0 20px rgba(99,102,241,0.2)", flexShrink: 0 }}>🔧</div>
+            <span style={{ fontWeight: 800, fontSize: 15, letterSpacing: "-0.3px" }}>Repair<span style={{ color: "#6366f1" }}>Track</span><span style={{ color: "#818cf8", fontSize: 12 }}>QR</span></span>
+          </div>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {[{ label: "📋 Panel Principal", path: "/dashboard" }, { label: "🛠️ Servicios", path: "/services", active: true }, { label: "📦 Inventario", path: "/inventory" }, { label: "💬 Mensajes", path: "/messages" }, { label: "📷 Escáner", path: "/scanner" }].map((btn) => (
-            <button key={btn.path} onClick={() => router.push(btn.path)} style={{ padding: "7px 14px", borderRadius: 8, border: "none", fontSize: 12, fontWeight: 600, cursor: "pointer", background: (btn as any).active ? "rgba(168,85,247,0.12)" : "transparent", color: (btn as any).active ? "#a855f7" : "var(--text-muted)" }}>{btn.label}</button>
+        <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, overflow: "auto", padding: "4px 0" }}>
+          {[{ label: "Panel Principal", path: "/dashboard", icon: "📋", r: "all" }, { label: "Servicios", path: "/services", icon: "🛠️", r: "admin", active: true }, { label: "Inventario", path: "/inventory", icon: "📦", r: "admin" }, { label: "Software", path: "/software", icon: "🎮", r: "admin" }, { label: "Mensajes", path: "/messages", icon: "💬", r: "all" }, { label: "Escáner", path: "/scanner", icon: "📷", r: "all" }, { label: "Cotizaciones", path: "/quotations", icon: "🧾", r: "all" }, { label: "Extracto", path: "/extracto", icon: "📊", r: "admin" }].filter((item: any) => item.r === "all" || user?.role === "admin").map((item) => (
+            <button key={item.path} className={`sidebar-btn${(item as any).active ? " active" : ""}`} onClick={() => router.push(item.path)}>
+              <div className="sidebar-icon" style={{ background: (item as any).active ? "rgba(99,102,241,0.15)" : "transparent" }}>{item.icon}</div>
+              {item.label}
+            </button>
           ))}
+        </nav>
+        <div style={{ borderTop: "1px solid var(--border)", padding: "12px 6px" }}>
+          <div style={{ padding: "14px 10px", marginBottom: 8, background: "rgba(99,102,241,0.04)", borderRadius: 12, border: "1px solid rgba(99,102,241,0.08)", textAlign: "center" }}>
+            <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #6366f1, #818cf8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, fontWeight: 800, color: "#fff", margin: "0 auto 8px", boxShadow: "0 4px 14px rgba(99,102,241,0.3)", letterSpacing: "-0.5px" }}>
+              {user?.name ? user.name.split(" ").slice(0, 2).map(w => w[0]).join("").toUpperCase() : "?"}
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1.4, wordBreak: "break-word", marginBottom: 6 }}>{user?.name}</div>
+            <div style={{ display: "inline-block", fontSize: 9, fontWeight: 700, color: "#818cf8", textTransform: "uppercase", letterSpacing: "0.5px", padding: "3px 10px", borderRadius: 8, background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.15)" }}>{user?.role === "tech" ? "🔧 Técnico" : "👤 Admin"}</div>
+          </div>
+          <button onClick={() => { localStorage.removeItem("token"); localStorage.removeItem("user"); router.push("/"); }} style={{ width: "100%", padding: "9px 14px", background: "rgba(239,68,68,0.06)", border: "1px solid rgba(239,68,68,0.12)", borderRadius: 10, color: "#ef4444", fontSize: 11, fontWeight: 600, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>🚪 Cerrar Sesión</button>
         </div>
-      </header>
+      </aside>
+
 
       <div style={{ maxWidth: 1000, margin: "0 auto", padding: "32px 24px" }}>
-        {/* STATS */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 14, marginBottom: 28 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(1, 1fr)", gap: 14, marginBottom: 28 }}>
           {[
             { label: "Total Servicios", value: services.length, icon: "🛠️", color: "#a855f7" },
-            { label: "Precio Promedio", value: services.length > 0 ? `Bs.${(totalRevenue / services.length).toFixed(0)}` : "Bs.0", icon: "📊", color: "#3b82f6" },
-            { label: "Precio Mayor", value: services.length > 0 ? `Bs.${Math.max(...services.map(s => s.price))}` : "Bs.0", icon: "💰", color: "#10b981" },
+
           ].map((s, i) => (
             <div key={i} style={{ padding: "20px 18px", background: `linear-gradient(135deg, ${s.color}10, ${s.color}02)`, borderRadius: 16, border: `1px solid ${s.color}15`, animation: `fadeIn 0.4s ease-out ${i * 0.06}s both`, position: "relative", overflow: "hidden" }}>
               <div style={{ position: "absolute", top: -10, right: -10, fontSize: 48, opacity: 0.06 }}>{s.icon}</div>
@@ -106,7 +131,6 @@ export default function ServicesPage() {
           <button onClick={() => { resetForm(); setShowForm(true); }} style={{ padding: "10px 20px", background: "linear-gradient(135deg, #a855f7, #7c3aed)", border: "none", borderRadius: 12, color: "#fff", fontWeight: 700, fontSize: 13, cursor: "pointer", boxShadow: "0 4px 16px rgba(168,85,247,0.3)" }}>＋ Nuevo Servicio</button>
         </div>
 
-        {/* FORMULARIO */}
         {showForm && (
           <div style={{ padding: 24, background: "var(--bg-card)", borderRadius: 16, border: "1px solid rgba(168,85,247,0.2)", marginBottom: 24, animation: "fadeScale 0.3s ease-out" }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: "#a855f7" }}>{editingId ? "✏️ Editar Servicio" : "＋ Nuevo Servicio"}</h3>
@@ -135,7 +159,6 @@ export default function ServicesPage() {
           </div>
         )}
 
-        {/* LISTA */}
         {loading ? (
           <div style={{ padding: 60, textAlign: "center", color: "var(--text-muted)" }}>Cargando...</div>
         ) : services.length === 0 ? (
