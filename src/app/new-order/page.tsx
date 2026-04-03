@@ -10,6 +10,7 @@ interface SoftwareItem { id: string; name: string; category: string | null; imag
 
 export default function NewOrderPage() {
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [device, setDevice] = useState(""); const [brand, setBrand] = useState(""); const [model, setModel] = useState("");
   const [issue, setIssue] = useState(""); const [cost, setCost] = useState(""); const [notes, setNotes] = useState("");
   const [clientName, setClientName] = useState(""); const [clientPhone, setClientPhone] = useState("");
@@ -71,7 +72,7 @@ export default function NewOrderPage() {
   if (user.role !== "admin") { router.push("/dashboard"); return null; }
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", position: "relative", paddingLeft: 200 }}>
+    <div className="main-content" style={{ minHeight: "100vh", background: "var(--bg-primary)", position: "relative", paddingLeft: 200 }}>
       {toast && <div style={{ position: "fixed", top: 24, right: 24, padding: "14px 24px", background: "linear-gradient(135deg, #10b981, #059669)", color: "#fff", borderRadius: 14, fontSize: 13, fontWeight: 600, boxShadow: "0 8px 30px rgba(16,185,129,0.3)", zIndex: 100, animation: "slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1)" }}>{toast}</div>}
       <style>{`
         @keyframes slideIn { from { opacity: 0; transform: translateX(80px) scale(0.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
@@ -81,10 +82,33 @@ export default function NewOrderPage() {
         .sidebar-btn:hover { background: rgba(99,102,241,0.06); color: var(--text-secondary); }
         .sidebar-btn.active { background: rgba(99,102,241,0.12); color: #818cf8; }
         .sidebar-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+      
+        @media(max-width:768px){
+          .sidebar-desktop{transform:translateX(-100%)!important}
+          .sidebar-desktop.open{transform:translateX(0)!important}
+          .main-content{padding-left:0!important;margin-left:0!important;padding-top:56px!important}
+          .mobile-header{display:flex!important}
+          .sidebar-overlay{display:block!important}
+          .stats-grid{grid-template-columns:repeat(2,1fr)!important}
+          .form-grid,.info-grid,.detail-grid{grid-template-columns:1fr!important}
+          .filter-wrap{flex-direction:column;align-items:stretch!important}
+          .filter-btns{overflow-x:auto;flex-wrap:nowrap!important;padding-bottom:4px}
+          .msg-layout{grid-template-columns:1fr!important}
+          .hide-mobile{display:none!important}
+          .data-grid-5{grid-template-columns:repeat(2,1fr)!important}
+        }
       `}</style>
 
+      
+      {/* MOBILE HEADER */}
+      <div className="mobile-header" style={{ display: "none", position: "fixed", top: 0, left: 0, right: 0, height: 56, background: "rgba(12,12,18,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)", alignItems: "center", padding: "0 16px", zIndex: 50, gap: 12 }}>
+        <button onClick={() => setMenuOpen(!menuOpen)} style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, cursor: "pointer", color: "#818cf8" }}>{menuOpen ? "✕" : "☰"}</button>
+        <span style={{ fontWeight: 800, fontSize: 15 }}>Repair<span style={{ color: "#6366f1" }}>Track</span><span style={{ color: "#818cf8", fontSize: 12 }}>QR</span></span>
+      </div>
+      {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} style={{ display: "none", position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 44 }} />}
+
       {/* ═══ SIDEBAR ═══ */}
-      <aside style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 200, background: "rgba(12,12,18,0.95)", backdropFilter: "blur(20px)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", zIndex: 45, padding: "0 10px" }}>
+      <aside className={`sidebar-desktop${menuOpen ? " open" : ""}`} style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 200, transition: "transform 0.3s ease", background: "rgba(12,12,18,0.95)", backdropFilter: "blur(20px)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", zIndex: 45, padding: "0 10px" }}>
         <div style={{ padding: "18px 14px 20px", borderBottom: "1px solid var(--border)", marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg, #6366f1, #818cf8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, boxShadow: "0 0 20px rgba(99,102,241,0.2)", flexShrink: 0 }}>🔧</div>
@@ -93,7 +117,7 @@ export default function NewOrderPage() {
         </div>
         <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, overflow: "auto", padding: "4px 0" }}>
           {[{ label: "Panel Principal", path: "/dashboard", icon: "📋", r: "all" }, { label: "Servicios", path: "/services", icon: "🛠️", r: "admin" }, { label: "Inventario", path: "/inventory", icon: "📦", r: "admin" }, { label: "Software", path: "/software", icon: "🎮", r: "admin" }, { label: "Mensajes", path: "/messages", icon: "💬", r: "all" }, { label: "Escáner", path: "/scanner", icon: "📷", r: "all" }, { label: "Cotizaciones", path: "/quotations", icon: "🧾", r: "all" }, { label: "Extracto", path: "/extracto", icon: "📊", r: "admin" }].filter((item: any) => item.r === "all" || user?.role === "admin").map((item) => (
-            <button key={item.path} className="sidebar-btn" onClick={() => router.push(item.path)}>
+            <button key={item.path} className="sidebar-btn" onClick={() => { setMenuOpen(false); router.push(item.path); }}>
               <div className="sidebar-icon">{item.icon}</div>
               {item.label}
             </button>
@@ -140,7 +164,7 @@ export default function NewOrderPage() {
           {/* CLIENTE */}
           <div style={{ padding: "20px 24px", background: "var(--bg-card)", borderRadius: 16, border: "1px solid rgba(99,102,241,0.12)" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#818cf8", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>👤 Datos del Cliente</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            <div className="form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div><label style={labelStyle}>Nombre del cliente *</label><input value={clientName} onChange={(e) => setClientName(e.target.value)} placeholder="Ej: Juan Pérez" required style={fieldStyle} /></div>
               <div><label style={labelStyle}>Celular *</label><input value={clientPhone} onChange={(e) => setClientPhone(e.target.value)} placeholder="Ej: 70012345" required style={fieldStyle} /></div>
             </div>
@@ -175,7 +199,7 @@ export default function NewOrderPage() {
           {/* EQUIPO */}
           <div style={{ padding: "20px 24px", background: "var(--bg-card)", borderRadius: 16, border: "1px solid rgba(245,158,11,0.12)" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#f59e0b", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>💻 Datos del Equipo</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
+            <div className="form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }}>
               <div><label style={labelStyle}>Tipo de dispositivo *</label><input value={device} onChange={(e) => setDevice(e.target.value)} placeholder="Laptop, PC, Tablet..." required style={fieldStyle} /></div>
               <div><label style={labelStyle}>Marca *</label><input value={brand} onChange={(e) => setBrand(e.target.value)} placeholder="HP, Dell, Lenovo..." required style={fieldStyle} /></div>
               <div><label style={labelStyle}>Modelo</label><input value={model} onChange={(e) => setModel(e.target.value)} placeholder="Pavilion 15, ThinkPad..." style={fieldStyle} /></div>
@@ -185,7 +209,7 @@ export default function NewOrderPage() {
           {/* ACCESORIOS */}
           <div style={{ padding: "20px 24px", background: "var(--bg-card)", borderRadius: 16, border: "1px solid rgba(16,185,129,0.12)" }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#10b981", marginBottom: 16, display: "flex", alignItems: "center", gap: 8 }}>🎒 Accesorios que entrega el cliente</div>
-            <div translate="no" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
+            <div translate="no" className="form-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
               {ACCESSORIES_LIST.map((acc) => {
                 const checked = selectedAccessories.includes(acc); const hint = ACCESSORIES_HINTS[acc]; const detail = accessoryDetails[acc] || "";
                 return (
@@ -203,7 +227,7 @@ export default function NewOrderPage() {
           </div>
 
           {/* PROBLEMA + OBSERVACIONES */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div className="form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <div style={{ padding: "20px 24px", background: "var(--bg-card)", borderRadius: 16, border: "1px solid var(--border)" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>🔧 Problema Reportado</div>
               <label style={labelStyle}>Descripción del problema *</label>
@@ -238,7 +262,7 @@ export default function NewOrderPage() {
                     <input value={searchServices} onChange={(e) => setSearchServices(e.target.value)} placeholder="Buscar servicio..." style={{ flex: 1, border: "none", background: "none", padding: "9px 0", color: "var(--text-primary)", fontSize: 12, outline: "none" }} />
                     {searchServices && <span onClick={() => setSearchServices("")} style={{ cursor: "pointer", fontSize: 11, color: "var(--text-muted)" }}>✕</span>}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, maxHeight: 280, overflow: "auto" }}>
+                  <div className="form-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, maxHeight: 280, overflow: "auto" }}>
                     {filteredServices.map((svc) => { const active = selectedServices.includes(svc.name); return (
                       <div key={svc.id || svc.name} onClick={() => toggleService(svc.name)} style={{ padding: "10px 12px", borderRadius: 10, cursor: "pointer", userSelect: "none", transition: "all 0.15s", border: `2px solid ${active ? "#a855f7" : "var(--border)"}`, background: active ? "rgba(168,85,247,0.1)" : "var(--bg-tertiary)", display: "flex", alignItems: "center", gap: 8 }}>
                         <div style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: active ? "none" : "2px solid var(--border)", background: active ? "#a855f7" : "transparent", color: "#fff", fontSize: 11, fontWeight: 800 }}>{active ? "✓" : ""}</div>
@@ -274,7 +298,7 @@ export default function NewOrderPage() {
                     <input value={searchSoftware} onChange={(e) => setSearchSoftware(e.target.value)} placeholder="Buscar software..." style={{ flex: 1, border: "none", background: "none", padding: "9px 0", color: "var(--text-primary)", fontSize: 12, outline: "none" }} />
                     {searchSoftware && <span onClick={() => setSearchSoftware("")} style={{ cursor: "pointer", fontSize: 11, color: "var(--text-muted)" }}>✕</span>}
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, maxHeight: 280, overflow: "auto" }}>
+                  <div className="form-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, maxHeight: 280, overflow: "auto" }}>
                     {filteredSoftware.map((sw) => { const active = selectedSoftware.includes(sw.name); return (
                       <div key={sw.id} onClick={() => toggleSoftware(sw.name)} style={{ padding: "10px 12px", borderRadius: 10, cursor: "pointer", userSelect: "none", transition: "all 0.15s", border: `2px solid ${active ? "#8b5cf6" : "var(--border)"}`, background: active ? "rgba(139,92,246,0.1)" : "var(--bg-tertiary)", display: "flex", alignItems: "center", gap: 8 }}>
                         <div style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", border: active ? "none" : "2px solid var(--border)", background: active ? "#8b5cf6" : "transparent", color: "#fff", fontSize: 11, fontWeight: 800 }}>{active ? "✓" : ""}</div>
@@ -289,7 +313,7 @@ export default function NewOrderPage() {
           )}
 
           {/* COSTO + SERVICIOS + SOFTWARE */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
+          <div className="form-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16 }}>
             <div style={{ padding: "20px 24px", background: "var(--bg-card)", borderRadius: 16, border: "1px solid var(--border)" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 14, display: "flex", alignItems: "center", gap: 8 }}>💰 Costo Estimado</div>
               <label style={labelStyle}>Monto en Bolivianos</label>

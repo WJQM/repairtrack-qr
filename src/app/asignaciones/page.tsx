@@ -32,6 +32,7 @@ function greet(): string { const h = new Date().getHours(); return h < 12 ? "Bue
 
 export default function AsignacionesPage() {
   const router = useRouter();
+  const [menuOpen, setMenuOpen] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [repairs, setRepairs] = useState<Repair[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +75,7 @@ export default function AsignacionesPage() {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-primary)", paddingLeft: 200 }}>
+    <div className="main-content" style={{ minHeight: "100vh", background: "var(--bg-primary)", paddingLeft: 200, paddingTop: 0 }}>
       {toast && <div style={{ position: "fixed", top: 20, right: 20, padding: "12px 22px", background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", borderRadius: 12, fontSize: 13, fontWeight: 600, boxShadow: "0 6px 24px rgba(16,185,129,0.3)", zIndex: 200, animation: "slideIn .3s ease-out" }}>{toast}</div>}
       {viewImg && <div onClick={() => setViewImg(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.92)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200, cursor: "pointer" }}><img src={viewImg} style={{ maxWidth: "90%", maxHeight: "90vh", borderRadius: 12 }} /></div>}
 
@@ -87,10 +88,33 @@ export default function AsignacionesPage() {
         .sbi{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
         .chip{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600}
         .abtn{transition:.15s}.abtn:hover{filter:brightness(1.15);transform:scale(1.02)}
+      
+        @media(max-width:768px){
+          .sidebar-desktop{transform:translateX(-100%)!important}
+          .sidebar-desktop.open{transform:translateX(0)!important}
+          .main-content{padding-left:0!important;margin-left:0!important;padding-top:56px!important}
+          .mobile-header{display:flex!important}
+          .sidebar-overlay{display:block!important}
+          .stats-grid{grid-template-columns:repeat(2,1fr)!important}
+          .form-grid,.info-grid,.detail-grid{grid-template-columns:1fr!important}
+          .filter-wrap{flex-direction:column;align-items:stretch!important}
+          .filter-btns{overflow-x:auto;flex-wrap:nowrap!important;padding-bottom:4px}
+          .msg-layout{grid-template-columns:1fr!important}
+          .hide-mobile{display:none!important}
+          .data-grid-5{grid-template-columns:repeat(2,1fr)!important}
+        }
       `}</style>
 
+      
+      {/* MOBILE HEADER */}
+      <div className="mobile-header" style={{ display: "none", position: "fixed", top: 0, left: 0, right: 0, height: 56, background: "rgba(12,12,18,0.95)", backdropFilter: "blur(20px)", borderBottom: "1px solid var(--border)", alignItems: "center", padding: "0 16px", zIndex: 50, gap: 12 }}>
+        <button onClick={() => setMenuOpen(!menuOpen)} style={{ width: 36, height: 36, borderRadius: 10, background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, cursor: "pointer", color: "#818cf8" }}>{menuOpen ? "✕" : "☰"}</button>
+        <span style={{ fontWeight: 800, fontSize: 15 }}>Repair<span style={{ color: "#6366f1" }}>Track</span><span style={{ color: "#818cf8", fontSize: 12 }}>QR</span></span>
+      </div>
+      {menuOpen && <div className="sidebar-overlay" onClick={() => setMenuOpen(false)} style={{ display: "none", position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 44 }} />}
+
       {/* SIDEBAR */}
-      <aside style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 200, background: "rgba(12,12,18,.95)", backdropFilter: "blur(20px)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", zIndex: 45, padding: "0 10px" }}>
+      <aside className={`sidebar-desktop${menuOpen ? " open" : ""}`} style={{ position: "fixed", top: 0, left: 0, bottom: 0, width: 200, transition: "transform 0.3s ease", background: "rgba(12,12,18,.95)", backdropFilter: "blur(20px)", borderRight: "1px solid var(--border)", display: "flex", flexDirection: "column", zIndex: 45, padding: "0 10px" }}>
         <div style={{ padding: "18px 14px 20px", borderBottom: "1px solid var(--border)", marginBottom: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: 10, background: "linear-gradient(135deg,#6366f1,#818cf8)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, boxShadow: "0 0 20px rgba(99,102,241,.2)", flexShrink: 0 }}>🔧</div>
@@ -99,7 +123,7 @@ export default function AsignacionesPage() {
         </div>
         <nav style={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, overflow: "auto", padding: "4px 0" }}>
           {[{ l: "Mis Asignaciones", p: "/asignaciones", i: "📋", on: true }, { l: "Mensajes", p: "/messages", i: "💬" }, { l: "Escáner", p: "/scanner", i: "📷" }, { l: "Cotizaciones", p: "/quotations", i: "🧾" }].map(x => (
-            <button key={x.p} className={`sb${(x as any).on ? " on" : ""}`} onClick={() => router.push(x.p)}>
+            <button key={x.p} className={`sb${(x as any).on ? " on" : ""}`} onClick={() => { setMenuOpen(false); router.push(x.p); }}>
               <div className="sbi" style={{ background: (x as any).on ? "rgba(99,102,241,.15)" : "transparent" }}>{x.i}</div>{x.l}
             </button>
           ))}
@@ -123,7 +147,7 @@ export default function AsignacionesPage() {
           <p style={{ color: "var(--text-muted)", fontSize: 13, marginTop: 3 }}>Tus órdenes de trabajo asignadas</p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12, marginBottom: 24 }}>
+        <div className="stats-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
           {[{ l: "Asignadas", v: st.total, i: "📋", c: "#6366f1" }, { l: "Pendientes", v: st.pend, i: "⏳", c: "#f59e0b" }, { l: "En Progreso", v: st.prog, i: "🔧", c: "#3b82f6" }, { l: "Completadas", v: st.done, i: "✅", c: "#10b981" }].map((s, i) => (
             <div key={i} style={{ padding: "16px", background: `linear-gradient(135deg,${s.c}10,${s.c}03)`, borderRadius: 14, border: `1px solid ${s.c}15`, position: "relative", overflow: "hidden", animation: `fadeIn .4s ease-out ${i * .06}s both` }}>
               <div style={{ position: "absolute", top: -8, right: -8, fontSize: 40, opacity: .06 }}>{s.i}</div>
@@ -138,7 +162,7 @@ export default function AsignacionesPage() {
             <span style={{ color: "var(--text-muted)", fontSize: 13 }}>🔍</span>
             <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Buscar..." style={{ flex: 1, border: "none", background: "none", padding: "10px 0", color: "var(--text-primary)", fontSize: 12, outline: "none" }} />
           </div>
-          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+          <div className="filter-btns" style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             {[{ k: "all", l: "Todas", i: "📋", c: "#6366f1" }, ...Object.entries(STATUS).filter(([k]) => k !== "delivered").map(([k, v]) => ({ k, l: v.label, i: v.icon, c: v.color }))].map(f => {
               const on = filter === f.k; const n = f.k === "all" ? repairs.length : repairs.filter(r => r.status === f.k).length;
               return <button key={f.k} onClick={() => setFilter(f.k)} style={{ padding: "6px 12px", borderRadius: 8, fontSize: 10, fontWeight: on ? 700 : 500, cursor: "pointer", display: "flex", alignItems: "center", gap: 4, background: on ? `${f.c}15` : "var(--bg-card)", border: on ? `1.5px solid ${f.c}40` : "1.5px solid var(--border)", color: on ? f.c : "var(--text-muted)" }}><span style={{ fontSize: 11 }}>{f.i}</span>{f.l}{n > 0 && <span style={{ fontSize: 9, fontWeight: 700, padding: "0 5px", borderRadius: 5, background: on ? `${f.c}20` : "var(--bg-tertiary)", color: on ? f.c : "var(--text-muted)" }}>{n}</span>}</button>;
@@ -199,7 +223,7 @@ export default function AsignacionesPage() {
                       )}
 
                       {/* Grid datos 5 columnas */}
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 8, marginBottom: 14 }}>
+                      <div className="data-grid-5" style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 8, marginBottom: 14 }}>
                         {[
                           { l: "Cliente", v: r.clientName || "—", i: "👤", c: "#818cf8" },
                           { l: "Celular", v: r.clientPhone || "—", i: "📱", c: "#818cf8" },
