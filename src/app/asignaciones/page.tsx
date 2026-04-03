@@ -89,19 +89,19 @@ export default function AsignacionesPage() {
         .chip{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:6px;font-size:10px;font-weight:600}
         .abtn{transition:.15s}.abtn:hover{filter:brightness(1.15);transform:scale(1.02)}
       
-        @media(max-width:768px){
+        @media(max-width:1024px){
           .sidebar-desktop{transform:translateX(-100%)!important}
           .sidebar-desktop.open{transform:translateX(0)!important}
           .main-content{padding-left:0!important;margin-left:0!important;padding-top:56px!important}
           .mobile-header{display:flex!important}
           .sidebar-overlay{display:block!important}
+          [style*="grid-template-columns"]{grid-template-columns:1fr!important}
           .stats-grid{grid-template-columns:repeat(2,1fr)!important}
-          .form-grid,.info-grid,.detail-grid{grid-template-columns:1fr!important}
-          .filter-wrap{flex-direction:column;align-items:stretch!important}
-          .filter-btns{overflow-x:auto;flex-wrap:nowrap!important;padding-bottom:4px}
+          .card-compact{flex-direction:column!important}
+          .card-img{width:100%!important;min-height:160px!important;max-height:200px!important}
+          .card-compact p{max-width:100%!important}
           .msg-layout{grid-template-columns:1fr!important}
-          .hide-mobile{display:none!important}
-          .data-grid-5{grid-template-columns:repeat(2,1fr)!important}
+          .filter-btns{overflow-x:auto;-webkit-overflow-scrolling:touch}
         }
       `}</style>
 
