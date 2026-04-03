@@ -192,7 +192,79 @@ export default function QuotationsPage() {
 
   // ═══ IMPRIMIR DOCUMENTO COMPLETO ═══
   const printDocument = (q: Quotation) => {
-    window.open(`/quotations/print/${q.id}`, "_blank");
+    const origin = window.location.origin;
+    const isQuot = q.type === "quotation";
+    const color = isQuot ? "#d97706" : "#059669";
+    const colorLight = isQuot ? "#fef3c7" : "#d1fae5";
+    const colorBorder = isQuot ? "#fde68a" : "#6ee7b7";
+    const docTitle = isQuot ? "COTIZACIÓN" : "NOTA DE VENTA";
+    const docIcon = isQuot ? "📋" : "💰";
+    const today = new Date().toLocaleDateString("es-BO", { year: "numeric", month: "long", day: "numeric" });
+    const createdDate = new Date(q.createdAt).toLocaleDateString("es-BO", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    const qrUrl = `${origin}/quotations?view=${q.id}`;
+    const qrColor = isQuot ? "d97706" : "059669";
+    const qrImg = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUrl)}&color=${qrColor}`;
+    const total = q.total.toFixed(2);
+    const itemsHtml = q.items.map((item, idx) => `<tr style="background:${idx % 2 === 0 ? "#fff" : "#fafafa"}"><td style="padding:10px 16px;font-size:12px;color:#888;border-bottom:1px solid #f0f0f0">${idx + 1}</td><td style="padding:10px 16px;font-size:13px;font-weight:600;border-bottom:1px solid #f0f0f0">📦 ${item.name}</td><td style="padding:10px 16px;font-size:13px;font-weight:700;text-align:center;border-bottom:1px solid #f0f0f0">${item.qty}</td><td style="padding:10px 16px;font-size:12px;text-align:right;color:#555;border-bottom:1px solid #f0f0f0">Bs. ${item.price.toFixed(2)}</td><td style="padding:10px 16px;font-size:13px;font-weight:700;text-align:right;color:${color};border-bottom:1px solid #f0f0f0">Bs. ${(item.price * item.qty).toFixed(2)}</td></tr>`).join("");
+    const totalQty = q.items.reduce((s, i) => s + i.qty, 0);
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(`<!DOCTYPE html><html><head><title>${docTitle} - ${q.id}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}body{background:#fff;font-family:'Segoe UI',Arial,sans-serif;color:#111}
+@media print{@page{size:A4;margin:15mm}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.no-print{display:none!important}}
+table{width:100%;border-collapse:collapse}
+</style></head><body>
+<div class="no-print" style="position:fixed;top:0;left:0;right:0;padding:12px 24px;background:#111118;display:flex;justify-content:space-between;align-items:center;z-index:100">
+<span style="color:#eee;font-size:14px;font-weight:600">${docIcon} ${docTitle} — ${q.id}</span>
+<div style="display:flex;gap:10px">
+<button onclick="window.print()" style="padding:8px 20px;background:linear-gradient(135deg,${color},${isQuot ? "#b45309" : "#047857"});border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:700;cursor:pointer">🖨️ Imprimir</button>
+<button onclick="window.close()" style="padding:8px 20px;background:#1e1e2e;border:1px solid #2e2e3e;border-radius:8px;color:#888;font-size:13px;font-weight:600;cursor:pointer">✕ Cerrar</button>
+</div></div>
+<div style="max-width:780px;margin:0 auto;padding:80px 40px 40px">
+<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid ${color};padding-bottom:20px;margin-bottom:24px">
+<div><h1 style="font-size:28px;font-weight:800">Repair<span style="color:#6366f1">Track</span><span style="color:#818cf8;font-size:20px">QR</span></h1><p style="font-size:11px;color:#666;margin-top:4px">SISTEMA DE GESTIÓN DE REPARACIONES</p></div>
+<div style="text-align:right"><div style="display:inline-block;padding:6px 16px;background:${color};border-radius:6px;margin-bottom:4px"><span style="font-size:16px;font-weight:800;color:#fff;font-family:monospace;letter-spacing:1px">${q.id}</span></div><p style="font-size:11px;color:#666;margin-top:4px">Fecha: ${today}</p></div>
+</div>
+<div style="background:${colorLight};padding:14px 20px;border-radius:8px;margin-bottom:24px;text-align:center;border:2px solid ${colorBorder}">
+<h2 style="font-size:20px;font-weight:800;color:${color};text-transform:uppercase;letter-spacing:1px">${docIcon} ${docTitle}</h2>
+<p style="font-size:11px;color:#666;margin-top:4px">${isQuot ? "Presupuesto válido por 15 días a partir de la fecha de emisión" : "Documento que acredita la venta de artículos"}</p>
+</div>
+<div style="display:flex;gap:20px;margin-bottom:24px">
+<div style="flex:1;border:1px solid #e2e2e2;border-radius:8px;overflow:hidden">
+<div style="background:#f0f0ff;padding:10px 16px;border-bottom:1px solid #d5d5ef"><h3 style="font-size:12px;font-weight:700;color:#6366f1;text-transform:uppercase">👤 Datos del Cliente</h3></div>
+<div style="padding:16px">
+<div style="margin-bottom:12px"><div style="font-size:10px;color:#888;font-weight:600;text-transform:uppercase;margin-bottom:4px">Nombre</div><div style="font-size:16px;font-weight:700">${q.clientName || "—"}</div></div>
+<div style="margin-bottom:12px"><div style="font-size:10px;color:#888;font-weight:600;text-transform:uppercase;margin-bottom:4px">Celular</div><div style="font-size:16px;font-weight:700">${q.clientPhone || "—"}</div></div>
+<div><div style="font-size:10px;color:#888;font-weight:600;text-transform:uppercase;margin-bottom:4px">Fecha de Emisión</div><div style="font-size:13px;font-weight:600">${createdDate}</div></div>
+</div></div>
+<div style="text-align:center;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
+<div style="display:inline-block;padding:10px;border:2px solid ${color};border-radius:12px;background:#fff"><img src="${qrImg}" alt="QR" width="120" height="120" style="display:block" /></div>
+<p style="font-size:9px;color:${color};margin-top:6px;font-weight:600">QR ${docTitle}</p>
+<p style="font-size:13px;font-weight:800;color:${color};font-family:monospace;margin-top:2px">${q.id}</p>
+</div></div>
+<div style="margin-bottom:24px;border:1px solid #e2e2e2;border-radius:8px;overflow:hidden">
+<div style="background:${colorLight};padding:10px 16px;border-bottom:1px solid ${colorBorder}"><h3 style="font-size:12px;font-weight:700;color:${color};text-transform:uppercase">📦 Detalle de Artículos</h3></div>
+<table><thead><tr style="background:#f9fafb">
+<th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;color:#666;text-transform:uppercase;border-bottom:2px solid #e5e7eb">#</th>
+<th style="padding:10px 16px;text-align:left;font-size:10px;font-weight:700;color:#666;text-transform:uppercase;border-bottom:2px solid #e5e7eb">Artículo</th>
+<th style="padding:10px 16px;text-align:center;font-size:10px;font-weight:700;color:#666;text-transform:uppercase;border-bottom:2px solid #e5e7eb">Cant.</th>
+<th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;color:#666;text-transform:uppercase;border-bottom:2px solid #e5e7eb">P. Unitario</th>
+<th style="padding:10px 16px;text-align:right;font-size:10px;font-weight:700;color:#666;text-transform:uppercase;border-bottom:2px solid #e5e7eb">Subtotal</th>
+</tr></thead><tbody>${itemsHtml}</tbody></table>
+<div style="padding:16px;display:flex;justify-content:space-between;align-items:center;border-top:2px solid #e5e7eb;background:#f9fafb">
+<span style="font-size:11px;color:#888">${q.items.length} artículo${q.items.length > 1 ? "s" : ""} · ${totalQty} unidades</span>
+<div style="text-align:right"><div style="font-size:12px;color:#888;font-weight:600">TOTAL</div><div style="font-size:24px;font-weight:800;color:${color}">Bs. ${total}</div></div>
+</div></div>
+${q.notes ? `<div style="margin-bottom:24px;border:1px solid #e2e2e2;border-radius:8px;overflow:hidden"><div style="background:#fffbeb;padding:10px 16px;border-bottom:1px solid #fde68a"><h3 style="font-size:12px;font-weight:700;color:#b45309;text-transform:uppercase">📝 Notas / Observaciones</h3></div><div style="padding:12px 16px"><p style="font-size:13px;line-height:1.7;color:#333">${q.notes}</p></div></div>` : ""}
+${isQuot ? `<div style="margin-bottom:24px;border:1px solid #e2e2e2;border-radius:8px;overflow:hidden"><div style="background:#fef3c7;padding:10px 16px;border-bottom:1px solid #fde68a"><h3 style="font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase">📋 Condiciones de la Cotización</h3></div><div style="padding:12px 16px;font-size:11px;color:#666;line-height:1.8"><p>1. Esta cotización tiene una validez de <strong>15 días</strong> a partir de su fecha de emisión.</p><p>2. Los precios están sujetos a disponibilidad de stock.</p><p>3. Los precios no incluyen el servicio de instalación salvo que se indique.</p><p>4. Para hacer efectiva la compra, presente este documento o el código <strong>${q.id}</strong>.</p></div></div>` : `<div style="margin-bottom:24px;padding:16px 20px;background:#d1fae5;border-radius:8px;border:2px solid #6ee7b7"><h3 style="font-size:12px;font-weight:700;color:#047857;text-transform:uppercase;margin-bottom:8px">✅ Confirmación de Venta</h3><p style="font-size:11px;line-height:1.7;color:#333">Se confirma la venta de los artículos detallados al cliente <strong>${q.clientName}</strong> por un total de <strong>Bs. ${total}</strong>. Los artículos han sido descontados del inventario. Garantía según política de cada producto.</p></div>`}
+<div style="display:flex;gap:40px;margin-bottom:24px;margin-top:36px">
+<div style="flex:1;text-align:center"><div style="border-bottom:2px solid #333;margin-bottom:8px;height:50px"></div><p style="font-size:12px;font-weight:700">Vendedor / Técnico</p><p style="font-size:10px;color:#888">Nombre y Firma</p></div>
+<div style="flex:1;text-align:center"><div style="border-bottom:2px solid #333;margin-bottom:8px;height:50px"></div><p style="font-size:12px;font-weight:700">Cliente: ${q.clientName || "________________"}</p><p style="font-size:10px;color:#888">Firma de Conformidad</p></div>
+</div>
+<div style="text-align:center;padding-top:12px;border-top:1px solid #e2e2e2"><p style="font-size:10px;color:#999">RepairTrackQR — ${docTitle} — ${today} — ${q.id}</p></div>
+</div></body></html>`);
+    w.document.close();
   };
 
   // ═══ IMPRIMIR SOLO QR ═══
